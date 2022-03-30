@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
+import { LoginModel } from 'app/models/login.model';
 
 @Component({
     selector     : 'auth-sign-in',
@@ -14,6 +15,17 @@ import { AuthService } from 'app/core/auth/auth.service';
 export class AuthSignInComponent implements OnInit
 {
     @ViewChild('signInNgForm') signInNgForm: NgForm;
+
+    userData: LoginModel = {
+        dni: '',
+        password: ''
+    };
+
+    miFormulario: FormGroup = this._formBuilder.group({
+        dni: ['', [Validators.required, Validators.minLength(8)]],
+        password: ['', [Validators.required]],
+        rememberMe: ['']
+      });
 
     alert: { type: FuseAlertType; message: string } = {
         type   : 'success',
@@ -29,7 +41,7 @@ export class AuthSignInComponent implements OnInit
         private _activatedRoute: ActivatedRoute,
         private _authService: AuthService,
         private _formBuilder: FormBuilder,
-        private _router: Router
+        private _router: Router,
     )
     {
     }
@@ -61,19 +73,19 @@ export class AuthSignInComponent implements OnInit
     signIn(): void
     {
         // Return if the form is invalid
-        if ( this.signInForm.invalid )
+        if ( this.miFormulario.invalid )
         {
             return;
         }
 
         // Disable the form
-        this.signInForm.disable();
+        this.miFormulario.disable();
 
         // Hide the alert
         this.showAlert = false;
 
         // Sign in
-        this._authService.signIn(this.signInForm.value)
+        this._authService.signIn(this.miFormulario.value)
             .subscribe(
                 () => {
 
@@ -90,7 +102,7 @@ export class AuthSignInComponent implements OnInit
                 (response) => {
 
                     // Re-enable the form
-                    this.signInForm.enable();
+                    this.miFormulario.enable();
 
                     // Reset the form
                     this.signInNgForm.resetForm();
@@ -98,12 +110,16 @@ export class AuthSignInComponent implements OnInit
                     // Set the alert
                     this.alert = {
                         type   : 'error',
-                        message: 'Wrong email or password'
+                        message: 'DNI o Password erróneo'
                     };
 
                     // Show the alert
                     this.showAlert = true;
                 }
             );
+    }
+
+    campoNoValido(campo: string) {
+        return this.miFormulario.get(campo)?.invalid && this.miFormulario.get(campo)?.touched;
     }
 }

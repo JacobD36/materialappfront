@@ -4,6 +4,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { AuthUtils } from 'app/core/auth/auth.utils';
 import { UserService } from 'app/core/user/user.service';
+import { environment } from 'environments/environment';
 
 @Injectable()
 export class AuthService
@@ -37,6 +38,14 @@ export class AuthService
         return localStorage.getItem('accessToken') ?? '';
     }
 
+    set idUser(id: string) {
+        localStorage.setItem('id', id);
+    }
+
+    get idUser(): string {
+        return localStorage.getItem('id') ?? '';
+    }
+
     // -----------------------------------------------------------------------------------------------------
     // @ Public methods
     // -----------------------------------------------------------------------------------------------------
@@ -66,7 +75,7 @@ export class AuthService
      *
      * @param credentials
      */
-    signIn(credentials: { email: string; password: string }): Observable<any>
+    signIn(credentials: { dni: string; password: string }): Observable<any>
     {
         // Throw error, if the user is already logged in
         if ( this._authenticated )
@@ -74,11 +83,11 @@ export class AuthService
             return throwError('User is already logged in.');
         }
 
-        return this._httpClient.post('api/auth/sign-in', credentials).pipe(
+        return this._httpClient.post(`${environment.url}/login`, credentials).pipe(
             switchMap((response: any) => {
-
                 // Store the access token in the local storage
-                this.accessToken = response.accessToken;
+                this.accessToken = response.token;
+                this.idUser = response.id;
 
                 // Set the authenticated flag to true
                 this._authenticated = true;
@@ -109,7 +118,7 @@ export class AuthService
             switchMap((response: any) => {
 
                 // Store the access token in the local storage
-                this.accessToken = response.accessToken;
+                //this.accessToken = response.accessToken;
 
                 // Set the authenticated flag to true
                 this._authenticated = true;
