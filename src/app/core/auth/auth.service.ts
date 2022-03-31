@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 import { AuthUtils } from 'app/core/auth/auth.utils';
 import { UserService } from 'app/core/user/user.service';
 import { environment } from 'environments/environment';
+import { User } from '../user/user.types';
+import { TokenModel } from 'app/models/login.model';
 
 @Injectable()
 export class AuthService
@@ -106,8 +108,30 @@ export class AuthService
      */
     signInUsingToken(): Observable<any>
     {
+        const params: HttpParams = new HttpParams().set('id', localStorage.getItem('id')!);
+        const headers: HttpHeaders = new HttpHeaders().set(
+          'Content-Type', 'application/json'
+        );
+
+        return this._httpClient.get<User>(`${environment.url}/getUser`, {headers, params}).pipe(
+            catchError(() =>
+                // Return false
+                of(false)
+            ),
+            switchMap((resp: User) => {
+                this._httpClient.post<TokenModel>(`${environment.url}/renewToken`, resp, {headers}).subscribe(data => {
+                    console.log(data.token)
+                    this.accessToken = data.token;
+                    this._authenticated = true;
+                    this._userService.user = resp;
+                });
+                
+                return of(true);
+            })
+        );
+        
         // Renew token
-        return this._httpClient.post('api/auth/refresh-access-token', {
+        /*return this._httpClient.post('api/auth/refresh-access-token', {
             accessToken: this.accessToken
         }).pipe(
             catchError(() =>
@@ -129,7 +153,7 @@ export class AuthService
                 // Return true
                 return of(true);
             })
-        );
+        );*/
     }
 
     /**
@@ -139,6 +163,7 @@ export class AuthService
     {
         // Remove the access token from the local storage
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('id');
 
         // Set the authenticated flag to false
         this._authenticated = false;

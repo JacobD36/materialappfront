@@ -78,6 +78,8 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanLoad
                            // If the user is not authenticated...
                            if ( !authenticated )
                            {
+                                localStorage.removeItem('accessToken');
+                                localStorage.removeItem('id');
                                // Redirect to the sign-in page
                                this._router.navigate(['sign-in'], {queryParams: {redirectURL}});
 
